@@ -1,103 +1,143 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
+import $ from 'jquery';
 
-class MyForm extends React.Component {
+//This is a component that has the list of contacts
+// It has a constructor method which starts it up with several variables
+// One of them is an array which has the contacts themselves
+// Each contact is an object with a name, phone, email, and type
+class ContactList extends React.Component {
   constructor() {
     super();
     this.state = {
-      yourName: ''
+      name: '',
+      phone: '',
+      email: '',
+      type: '',
+      viewMode: 'all',
+      contacts: []
     };
   }
+
+  //Loading initial list from DB
+  componentDidMount() {
+    $.get('http://localhost:3001/api/contacts')
+      .then(contacts => {
+        this.setState({
+          contacts: contacts
+        })
+      });
+  }
+
+  changeState(stateName, event) {
+    let textInput = event.target;
+    this.setState({
+      [stateName]: textInput.value
+    });
+  }
+  submitForm(event) {
+    event.preventDefault();
+    let contact = {
+      name: this.state.name,
+      phone: this.state.phone,
+      email: this.state.email,
+      type: this.state.type
+    };
+    this.state.contacts.push(contact);
+    this.setState({
+      contacts: this.state.contacts,
+      name: '',
+      phone: '',
+      email: '',
+      type: ''
+    });
+  }
+  deleteContact(idx) {
+    this.state.contacts.splice(idx, 1);
+    this.setState({
+      contacts: this.state.contacts
+    });
+  }
+
+
   render() {
     return (
-      <form>
-        <label>Your name?</label>
-        <input type="text"
-          value={this.state.yourName}/>
-        <button type="submit">Submit</button>
-      </form>
+      <div className="contact-list">
+        <form onSubmit={event => this.submitForm(event)}>
+          <h3>Add Contact</h3>
+          <TextInput
+            label="Name" value={this.state.name}
+            onChange={event =>
+              this.changeState('name', event)}/>
+          <TextInput
+            label="Phone" value={this.state.phone}
+            onChange={event =>
+              this.changeState('phone', event)}/>
+          <TextInput
+            label="Email" value={this.state.email}
+            onChange={event =>
+              this.changeState('email', event)}/>
+          <SelectInput
+            label="Type" value={this.state.type}
+            onChange={event =>
+              this.changeState('type', event)}>
+            <option value="">Select one</option>
+            <option value="friend">Friend</option>
+            <option value="family">Family</option>
+            <option value="coworker">Coworker</option>
+          </SelectInput>
+
+          <button className="btn btn-primary">Add</button>
+        </form>
+        <h3>Contact List</h3>
+        <ul>
+          {this.state.contacts.map((contact, idx) =>
+            <li key={idx}>
+              <h3>{contact.name} - {contact.type}</h3>
+              {contact.email}, {contact.phone}
+              <input type="checkbox"
+                checked={contact.favorite}
+                onChange={event => this.changeFavorite(contact, event)}/>
+              <button onClick={() =>
+              this.deleteContact(contact)}>Delete</button>
+            </li>
+          )}
+        </ul>
+      </div>
     );
   }
 }
 
-class ContactApp extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      contacts : [
-        {id: 1, name: 'Bob', phone: '555 555 5555', email: 'bob@yahoo.com', type: 'friend'},
-        {id: 2, name: 'Sue', phone: '111 222 3333', email: 'sue@yahoo.com', type: 'friend'}
-      ],
-      newName : 'Empty Name',
-      newPhone: '000-000-000',
-      newEmail: 'empty@empty.com',
-      newType: 'nostatus'
-    };
-  }
-  // addContact() {
-  //   let theContacts = this.state.contacts;
-  //   this.setState({
-  //     theContacts.push
-  //   });
-  // }
+class TextInput extends React.Component {
   render() {
-    let theContacts = this.state.contacts;
-    let showthis = theContacts.map(
-      theContacts => <div>
-                      <li>{theContacts.name} - {theContacts.type}</li>
-                      <li>{theContacts.phone}</li>
-                      <li>{theContacts.email}</li>
-                      <button>Delete</button>
-                      <hr/>
-                    </div>
-    );
     return (
-      <div>
-        <div className="form-group">
-          <h2>Add Contact</h2>
-          <hr/>
-          <label>Name</label>
-          <input type="text"
-            className="form-control"
-            value={this.state.name}
-            onChange={event => this.changeYourName(event)}/>
+      <div className="form-group">
+        <label>{this.props.label}</label>
+        <input className="form-control" type="text"
+          value={this.props.value}
+          onChange={this.props.onChange}/>
+      </div>
+    );
+  }
+}
 
-          <label>Phone</label>
-          <input type="text"
-            className="form-control"
-            value={this.state.phone}
-            onChange={event => this.changeYourPhone(event)}/>
-
-          <label>Email</label>
-          <input type="text"
-            className="form-control"
-            value={this.state.email}
-            onChange={event => this.changeYourEmail(event)}/>
-
-          <label>Type</label>
-          <select
-            className="form-control"
-            value={this.state.type}
-            onChange={event => this.changeStateValue('type', event)}>
-            <option value="friend">Friend</option>
-            <option value="family">Family</option>
-            <option value="coworker">Coworker</option>
-          </select>
-          <button onClick ={() => this.addContact()}>Add</button>
-        </div>
-        <div>
-          <h2>Contact List</h2>
-          <ul>
-            {showthis}
-          </ul>
-        </div>
+class SelectInput extends React.Component {
+  render() {
+    return (
+      <div className="form-group">
+        <label>{this.props.label}</label>
+        <select className="form-control"
+          value={this.props.value}
+          onChange={this.props.onChange}>
+          {this.props.children}
+        </select>
       </div>
     );
   }
 }
 
 ReactDOM.render(
-  <ContactApp/>,
+  <ContactList/>,
   document.getElementById('root')
 );

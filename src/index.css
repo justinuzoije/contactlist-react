@@ -4,6 +4,6 @@ body {
   font-family: sans-serif;
 }
 
-/*.form-group {
-  padding-bottom: 10px;
-}*/
+.contact-list {
+  padding: 50px;
+}
